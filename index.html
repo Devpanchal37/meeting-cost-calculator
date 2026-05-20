@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meeting Cost Calculator 💸</title>
+  <meta name="description" content="See the real cost of your meetings — in real time. Multi-attendee, India salary presets, live ticker.">
+
+  <!-- Open Graph / Social sharing -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Meeting Cost Calculator 💸">
+  <meta property="og:description" content="See the real cost of your meetings — in real time.">
+  <meta property="og:image" content="assets/preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Meeting Cost Calculator 💸">
+  <meta name="twitter:description" content="See the real cost of your meetings — in real time.">
+  <meta name="twitter:image" content="assets/preview.png">
+
+  <!-- Emoji favicon — no external assets needed -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💸</text></svg>">
+
+  <link rel="stylesheet" href="styles/main.css">
+
+  <!-- html2canvas for PNG export — loaded before the module script -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+</head>
+<body>
+
+  <!-- Weekly stats bar (hidden until first meeting is saved) -->
+  <div id="weekly-bar" class="weekly-bar hidden">
+    <span id="weekly-summary"></span>
+    <button id="weekly-toggle" class="btn-text">▼ History</button>
+    <div id="weekly-history" class="weekly-history hidden"></div>
+  </div>
+
+  <div class="container">
+
+    <!-- ──────────────── SETUP PANEL ──────────────── -->
+    <section id="setup-panel" class="panel">
+      <div class="header">
+        <h1>💸 Meeting Cost Calculator</h1>
+        <p class="subtitle">See the real cost of your meetings — in real time.</p>
+      </div>
+
+      <!-- Currency -->
+      <div class="form-group">
+        <label>Currency</label>
+        <div class="currency-tabs">
+          <button class="currency-btn active" data-currency="INR">₹ INR</button>
+          <button class="currency-btn" data-currency="USD">$ USD</button>
+          <button class="currency-btn" data-currency="EUR">€ EUR</button>
+        </div>
+      </div>
+
+      <!-- Attendees -->
+      <div class="form-group">
+        <label>Attendees</label>
+        <div id="attendees-list"></div>
+        <button id="add-attendee" class="btn-secondary" style="margin-top:8px;">+ Add Attendee</button>
+      </div>
+
+      <!-- Estimate mode -->
+      <div class="form-group">
+        <label>Quick estimate <span class="optional">(optional — no need to run the timer)</span></label>
+        <div class="estimate-row">
+          <input type="number" id="estimate-duration" placeholder="Meeting length in minutes" min="1" max="480">
+          <button id="estimate-btn" class="btn-secondary">Calculate</button>
+        </div>
+        <div id="estimate-result" class="estimate-result hidden"></div>
+      </div>
+
+      <button id="start-btn" class="btn-primary">▶ Start Live Timer</button>
+    </section>
+
+    <!-- ──────────────── TICKER PANEL ──────────────── -->
+    <section id="ticker-panel" class="panel hidden">
+      <div class="ticker-header">
+        <span>Total Cost</span>
+        <div id="paused-badge" class="paused-badge hidden">PAUSED</div>
+      </div>
+
+      <div id="cost-display" class="cost-display cost-low">loading…</div>
+
+      <div class="secondary-stats">
+        <div class="stat">
+          <span class="stat-label">Elapsed</span>
+          <span id="elapsed-display" class="stat-value">00:00</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Cost / min</span>
+          <span id="cpm-display" class="stat-value">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Attendees</span>
+          <span id="attendee-count-display" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <div class="ticker-controls">
+        <button id="pause-btn" class="btn-secondary">⏸ Pause</button>
+        <button id="end-btn" class="btn-danger">End Meeting</button>
+      </div>
+
+      <div id="end-confirm" class="end-confirm hidden">
+        <span>End this meeting?</span>
+        <button id="end-confirm-yes" class="btn-danger btn-sm">Yes, end it</button>
+        <button id="end-confirm-no" class="btn-secondary btn-sm">Keep going</button>
+      </div>
+    </section>
+
+    <!-- ──────────────── SUMMARY PANEL ──────────────── -->
+    <section id="summary-panel" class="panel hidden">
+      <h2>Meeting Summary</h2>
+
+      <div class="summary-hero">
+        <div id="summary-cost" class="summary-cost">—</div>
+        <div class="summary-meta">
+          <span id="summary-duration">—</span>
+          <span id="summary-attendees">—</span>
+          <span id="summary-cpm">—</span>
+        </div>
+      </div>
+
+      <div class="summary-section">
+        <h3>Per-Person Breakdown</h3>
+        <table class="breakdown-table">
+          <thead>
+            <tr><th>Name</th><th>Role</th><th>Cost</th><th>%</th></tr>
+          </thead>
+          <tbody id="breakdown-body"></tbody>
+        </table>
+      </div>
+
+      <div class="summary-section">
+        <h3>What else could this buy?</h3>
+        <div id="fun-comparisons" class="fun-comparisons"></div>
+      </div>
+
+      <div class="summary-section">
+        <h3>If this meeting recurs…</h3>
+        <table class="recurring-table">
+          <thead>
+            <tr><th>Frequency</th><th>Annual cost</th></tr>
+          </thead>
+          <tbody id="recurring-body"></tbody>
+        </table>
+      </div>
+
+      <div class="export-btns">
+        <button id="copy-btn" class="btn-secondary">📋 Copy Report</button>
+        <button id="png-btn" class="btn-secondary">🖼 Download Card</button>
+        <button id="new-meeting-btn" class="btn-primary">+ New Meeting</button>
+      </div>
+    </section>
+
+  </div><!-- /container -->
+
+  <!-- Toast container (milestone alerts, copy feedback, etc.) -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Hidden div used as html2canvas export target — positioned off-screen -->
+  <div id="export-card" style="display:none;position:absolute;left:-9999px;top:0;"></div>
+
+  <script type="module">
+    import { calculateMeetingCost, formatCurrency, getCostThreshold, estimateCost } from './src/calculator.js';
+    import { MeetingTimer } from './src/timer.js';
+    import { getRoles, getPreset, getDefaultCTCForCurrency } from './src/presets.js';
+    import { saveMeeting, getWeeklyStats, getThisWeekMeetings } from './src/storage.js';
+    import { copyToClipboard, exportPNGCard } from './src/export.js';
+
+    // ── State ───────────────────────────────────────────
+    let currency = 'INR';
+    let attendees = [];
+    const timer = new MeetingTimer();
+
+    // ── DOM refs ─────────────────────────────────────────
+    const setupPanel    = document.getElementById('setup-panel');
+    const tickerPanel   = document.getElementById('ticker-panel');
+    const summaryPanel  = document.getElementById('summary-panel');
+    const costDisplay   = document.getElementById('cost-display');
+    const elapsedDisplay     = document.getElementById('elapsed-display');
+    const cpmDisplay         = document.getElementById('cpm-display');
+    const attendeeCountDisplay = document.getElementById('attendee-count-display');
+    const pauseBtn      = document.getElementById('pause-btn');
+    const endBtn        = document.getElementById('end-btn');
+    const endConfirm    = document.getElementById('end-confirm');
+    const pausedBadge   = document.getElementById('paused-badge');
+    const weeklyBar     = document.getElementById('weekly-bar');
+    const weeklySummary = document.getElementById('weekly-summary');
+    const weeklyHistory = document.getElementById('weekly-history');
+
+    // ── Currency ─────────────────────────────────────────
+    document.querySelectorAll('.currency-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currency = btn.dataset.currency;
+        document.querySelectorAll('.currency-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // Reset CTCs to new currency defaults
+        attendees.forEach(a => {
+          a.annualCTC = getPreset(a.role, currency) || getDefaultCTCForCurrency(currency);
+        });
+        renderAttendees();
+        updateEstimate();
+      });
+    });
+
+    // ── Attendee management ──────────────────────────────
+    function makeAttendee() {
+      const role = getRoles(currency)[1] || 'SDE 1';
+      return { name: '', role, annualCTC: getDefaultCTCForCurrency(currency) };
+    }
+
+    function renderAttendees() {
+      const list = document.getElementById('attendees-list');
+      list.innerHTML = '';
+
+      attendees.forEach((att, i) => {
+        const row = document.createElement('div');
+        row.className = 'attendee-row';
+
+        const sym = currency === 'INR' ? '₹' : currency === 'USD' ? '$' : '€';
+        const roleOptions = getRoles(currency)
+          .map(r => `<option value="${r}" ${r === att.role ? 'selected' : ''}>${r}</option>`)
+          .join('');
+
+        row.innerHTML = `
+          <input class="att-name" type="text" placeholder="Name (optional)" value="${escHtml(att.name)}">
+          <select class="att-role">
+            <option value="">— Custom —</option>
+            ${roleOptions}
+          </select>
+          <input class="att-ctc" type="number" placeholder="Annual CTC" value="${att.annualCTC}" min="0" step="10000">
+          <span class="att-currency-label">${sym}</span>
+          ${attendees.length > 1 ? `<button class="btn-remove" title="Remove" data-i="${i}">✕</button>` : '<span></span>'}
+        `;
+        list.appendChild(row);
+
+        row.querySelector('.att-name').addEventListener('input', e => {
+          attendees[i].name = e.target.value;
+        });
+
+        row.querySelector('.att-role').addEventListener('change', e => {
+          const role = e.target.value;
+          attendees[i].role = role;
+          if (role) {
+            const preset = getPreset(role, currency);
+            attendees[i].annualCTC = preset;
+            row.querySelector('.att-ctc').value = preset;
+          }
+          updateEstimate();
+        });
+
+        row.querySelector('.att-ctc').addEventListener('input', e => {
+          attendees[i].annualCTC = Math.max(0, parseFloat(e.target.value) || 0);
+          // Clear role selection if CTC was edited manually
+          if (e.target.value && getPreset(attendees[i].role, currency) !== attendees[i].annualCTC) {
+            row.querySelector('.att-role').value = '';
+            attendees[i].role = 'Custom';
+          }
+          updateEstimate();
+        });
+
+        if (attendees.length > 1) {
+          row.querySelector('.btn-remove').addEventListener('click', () => {
+            attendees.splice(i, 1);
+            renderAttendees();
+            updateEstimate();
+          });
+        }
+      });
+    }
+
+    document.getElementById('add-attendee').addEventListener('click', () => {
+      attendees.push(makeAttendee());
+      renderAttendees();
+    });
+
+    // ── Estimate mode ────────────────────────────────────
+    function updateEstimate() {
+      const dur = parseFloat(document.getElementById('estimate-duration').value);
+      const result = document.getElementById('estimate-result');
+      const valid = attendees.filter(a => a.annualCTC > 0);
+      if (!dur || dur <= 0 || !valid.length) {
+        result.classList.add('hidden');
+        return;
+      }
+      const { totalCost } = estimateCost(valid, dur);
+      result.textContent = `Estimated cost: ${formatCurrency(totalCost, currency)}`;
+      result.classList.remove('hidden');
+    }
+
+    document.getElementById('estimate-btn').addEventListener('click', updateEstimate);
+    document.getElementById('estimate-duration').addEventListener('input', updateEstimate);
+
+    // ── Start meeting ─────────────────────────────────────
+    document.getElementById('start-btn').addEventListener('click', () => {
+      const valid = attendees.filter(a => a.annualCTC > 0);
+      if (!valid.length) {
+        showToast('Add at least one attendee with a salary above 0');
+        return;
+      }
+
+      setupPanel.classList.add('hidden');
+      tickerPanel.classList.remove('hidden');
+      endConfirm.classList.add('hidden');
+      pausedBadge.classList.add('hidden');
+      pauseBtn.textContent = '⏸ Pause';
+      attendeeCountDisplay.textContent = valid.length;
+
+      timer.reset();
+      timer.start(
+        (elapsed) => {
+          const { totalCost } = calculateMeetingCost(valid, elapsed);
+          const threshold = getCostThreshold(totalCost, currency);
+          costDisplay.textContent = formatCurrency(totalCost, currency);
+          costDisplay.className = `cost-display cost-${threshold}`;
+          elapsedDisplay.textContent = fmtElapsed(elapsed);
+          const cpm = elapsed > 1 ? (totalCost / elapsed) * 60 : 0;
+          cpmDisplay.textContent = formatCurrency(cpm, currency);
+          timer.checkMilestones(totalCost, currency);
+        },
+        (amount, cur) => {
+          showToast(`💸 Meeting just hit ${formatCurrency(amount, cur)}`);
+        }
+      );
+    });
+
+    // ── Pause / Resume ────────────────────────────────────
+    pauseBtn.addEventListener('click', () => {
+      if (timer.isRunning) {
+        timer.pause();
+        pauseBtn.textContent = '▶ Resume';
+        pausedBadge.classList.remove('hidden');
+      } else {
+        timer.resume();
+        pauseBtn.textContent = '⏸ Pause';
+        pausedBadge.classList.add('hidden');
+      }
+    });
+
+    // ── End meeting ───────────────────────────────────────
+    endBtn.addEventListener('click', () => {
+      endConfirm.classList.toggle('hidden');
+    });
+
+    document.getElementById('end-confirm-no').addEventListener('click', () => {
+      endConfirm.classList.add('hidden');
+    });
+
+    document.getElementById('end-confirm-yes').addEventListener('click', () => {
+      const elapsed = timer.stop();
+      const valid = attendees.filter(a => a.annualCTC > 0);
+      const { totalCost, breakdown } = calculateMeetingCost(valid, elapsed);
+
+      saveMeeting({
+        date: new Date().toISOString(),
+        duration: elapsed,
+        totalCost,
+        currency,
+        attendeeCount: valid.length,
+        attendees: breakdown,
+      });
+
+      tickerPanel.classList.add('hidden');
+      summaryPanel.classList.remove('hidden');
+      renderSummary(totalCost, elapsed, breakdown, valid.length);
+      updateWeeklyBar();
+    });
+
+    // ── Summary ───────────────────────────────────────────
+    function renderSummary(totalCost, elapsed, breakdown, headcount) {
+      const cpm = elapsed > 0 ? (totalCost / elapsed) * 60 : 0;
+      const threshold = getCostThreshold(totalCost, currency);
+
+      document.getElementById('summary-cost').textContent = formatCurrency(totalCost, currency);
+      document.getElementById('summary-cost').className = `summary-cost cost-${threshold}`;
+      document.getElementById('summary-duration').textContent = `⏱ ${fmtDurationLong(elapsed)}`;
+      document.getElementById('summary-attendees').textContent = `👥 ${headcount} attendee${headcount !== 1 ? 's' : ''}`;
+      document.getElementById('summary-cpm').textContent = `${formatCurrency(cpm, currency)}/min`;
+
+      // Breakdown table
+      const tbody = document.getElementById('breakdown-body');
+      tbody.innerHTML = '';
+      [...breakdown].sort((a, b) => b.cost - a.cost).forEach(a => {
+        const pct = totalCost > 0 ? ((a.cost / totalCost) * 100).toFixed(1) : '0';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escHtml(a.name) || '—'}</td>
+          <td>${escHtml(a.role)}</td>
+          <td>${formatCurrency(a.cost, currency)}</td>
+          <td>${pct}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Fun comparisons
+      document.getElementById('fun-comparisons').innerHTML =
+        getFunComparisons(totalCost, currency)
+          .map(c => `<div class="comparison-item">${c.count > 0 ? `= ${c.count.toLocaleString()} ${c.label}` : `Less than one ${c.label}`}</div>`)
+          .join('');
+
+      // Recurring projections
+      const rBody = document.getElementById('recurring-body');
+      rBody.innerHTML = '';
+      [['Daily (260 working days)', 260], ['Weekly (52 weeks)', 52], ['Monthly (12 months)', 12]]
+        .forEach(([label, times]) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${label}</td><td>${formatCurrency(totalCost * times, currency)}/year</td>`;
+          rBody.appendChild(tr);
+        });
+
+      // Export buttons
+      const summaryData = {
+        totalCost,
+        duration: elapsed,
+        attendees: breakdown,
+        costPerMinute: cpm,
+        weeklyAnnual: totalCost * 52,
+      };
+
+      document.getElementById('copy-btn').onclick = async () => {
+        const ok = await copyToClipboard(summaryData, currency);
+        const btn = document.getElementById('copy-btn');
+        btn.textContent = ok ? '✅ Copied!' : '❌ Failed';
+        setTimeout(() => { btn.textContent = '📋 Copy Report'; }, 2000);
+      };
+
+      document.getElementById('png-btn').onclick = () => {
+        exportPNGCard(summaryData, currency);
+      };
+    }
+
+    function getFunComparisons(totalCost, currency) {
+      if (currency === 'INR') {
+        return [
+          { count: Math.floor(totalCost / 300), label: 'Swiggy orders (avg ₹300)' },
+          { count: Math.floor(totalCost / 250), label: 'movie tickets (₹250)' },
+          { count: Math.floor(totalCost / 20),  label: 'cups of chai (₹20)' },
+        ];
+      }
+      if (currency === 'USD') {
+        return [
+          { count: Math.floor(totalCost / 5),  label: 'coffees ($5)' },
+          { count: Math.floor(totalCost / 15), label: 'Uber rides ($15)' },
+          { count: Math.floor(totalCost / 4),  label: 'GitHub Pro months ($4)' },
+        ];
+      }
+      return [
+        { count: Math.floor(totalCost / 4),  label: 'coffees (€4)' },
+        { count: Math.floor(totalCost / 12), label: 'Spotify months (€12)' },
+        { count: Math.floor(totalCost / 10), label: 'beers at a bar (€10)' },
+      ];
+    }
+
+    // ── New meeting ───────────────────────────────────────
+    document.getElementById('new-meeting-btn').addEventListener('click', () => {
+      timer.reset();
+      costDisplay.textContent = '—';
+      costDisplay.className = 'cost-display cost-low';
+      summaryPanel.classList.add('hidden');
+      setupPanel.classList.remove('hidden');
+    });
+
+    // ── Keyboard shortcuts ────────────────────────────────
+    document.addEventListener('keydown', e => {
+      const inInput = ['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName);
+      if (tickerPanel.classList.contains('hidden') || inInput) return;
+      if (e.code === 'Space') { e.preventDefault(); pauseBtn.click(); }
+      if (e.code === 'Escape') { endBtn.click(); }
+    });
+
+    // ── Weekly bar ────────────────────────────────────────
+    function updateWeeklyBar() {
+      const stats = getWeeklyStats();
+      if (stats.meetingCount === 0) { weeklyBar.classList.add('hidden'); return; }
+      weeklyBar.classList.remove('hidden');
+      const totalMins = Math.round(stats.totalMinutes);
+      const h = Math.floor(totalMins / 60);
+      const m = totalMins % 60;
+      const durStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+      const cur = getThisWeekMeetings().at(-1)?.currency || currency;
+      weeklySummary.textContent =
+        `Week so far: ${formatCurrency(stats.totalCost, cur)} across ${stats.meetingCount} meeting${stats.meetingCount !== 1 ? 's' : ''} (${durStr})`;
+    }
+
+    document.getElementById('weekly-toggle').addEventListener('click', () => {
+      weeklyHistory.classList.toggle('hidden');
+      document.getElementById('weekly-toggle').textContent =
+        weeklyHistory.classList.contains('hidden') ? '▼ History' : '▲ History';
+      if (!weeklyHistory.classList.contains('hidden')) {
+        const meetings = [...getThisWeekMeetings()].reverse();
+        weeklyHistory.innerHTML = meetings.length
+          ? meetings.map(m => {
+              const d = new Date(m.date).toLocaleDateString();
+              const dur = Math.round(m.duration / 60);
+              return `<div class="history-item">${d} — ${formatCurrency(m.totalCost, m.currency)} · ${dur}m · ${m.attendeeCount} people</div>`;
+            }).join('')
+          : '<div class="history-item">No meetings saved this week.</div>';
+      }
+    });
+
+    // ── Toast ─────────────────────────────────────────────
+    function showToast(msg) {
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      document.getElementById('toast-container').appendChild(el);
+      requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('toast-show')));
+      setTimeout(() => {
+        el.classList.remove('toast-show');
+        setTimeout(() => el.remove(), 400);
+      }, 3200);
+    }
+
+    // ── Helpers ───────────────────────────────────────────
+    function fmtElapsed(s) {
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60);
+      return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    }
+
+    function fmtDurationLong(s) {
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = Math.floor(s % 60);
+      if (h > 0) return `${h}h ${m}m`;
+      if (m > 0) return `${m}m ${sec}s`;
+      return `${sec}s`;
+    }
+
+    function escHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    attendees.push(makeAttendee());
+    renderAttendees();
+    updateWeeklyBar();
+  </script>
+</body>
+</html>
