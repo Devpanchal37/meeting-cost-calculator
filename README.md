@@ -16,9 +16,7 @@ The cost is invisible. There's no feedback loop. And the default for every recur
 
 **[Live Demo →](https://devpanchal37.github.io/meeting-cost-calculator/)**
 
-![Meeting ticker mid-meeting](assets/preview.png)
-
-> **Screenshot missing?** The `assets/preview.png` file needs to be added manually — take a screenshot of the live ticker, save it as `assets/preview.png`, and push it to the repo.
+![Meeting ticker mid-meeting](assets/preview.jpeg)
 
 ---
 
@@ -30,12 +28,12 @@ The cost is invisible. There's no feedback loop. And the default for every recur
 - **INR / USD / EUR support** — Indian number formatting (₹1,23,456) included
 - **Milestone alerts** — toast notification when cost crosses ₹500, ₹1,000, ₹2,000…
 - **Meeting summary** — per-person breakdown, cost per minute, total duration
-- **"What else could this buy?"** — fun cost comparisons (Swiggy orders, chai cups, coffees)
+- **"What else could this buy?"** — fun cost comparisons (chai, biryani, Swiggy, Spotify, and more)
 - **Recurring cost projections** — daily / weekly / monthly annual cost estimate
 - **Weekly rollup** — tracks all meetings in the browser, shows week-to-date total
 - **Copy report** — one-click plain-text summary for Slack/email
 - **PNG card export** — LinkedIn/Twitter-ready 600×315 card
-- **Zero dependencies** — no npm, no build step, works offline, open `index.html` and go
+- **Zero dependencies** — no npm, no build step, works offline
 - **Keyboard shortcuts** — Space to pause/resume, Esc to end
 
 ---
@@ -48,7 +46,7 @@ cost_per_second = hourly_rate / 3600
 meeting_cost    = cost_per_second × elapsed_seconds × attendees
 ```
 
-That's it. The formula is visible in [`src/calculator.js`](src/calculator.js) — no magic, just arithmetic applied every animation frame.
+That's it. The formula is in [`src/calculator.js`](src/calculator.js) — no magic, just arithmetic applied every animation frame.
 
 **Example:** 4 engineers at ₹22 LPA in a 45-minute meeting:
 
@@ -103,31 +101,30 @@ git clone https://github.com/Devpanchal37/meeting-cost-calculator.git
 cd meeting-cost-calculator
 ```
 
-Then open `index.html` via a local server — ES modules require HTTP, not `file://`:
+Open `index.html` via a local server (ES modules require HTTP, not `file://`):
 
-- **VS Code:** install [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) → click "Go Live"
-- **Python:** `python -m http.server 8000` → visit `localhost:8000`
-- **Node:** `npx serve .` → visit the printed URL
+- **VS Code:** [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) → click "Go Live"
+- **Python:** `python -m http.server 8000` → `localhost:8000`
+- **Node:** `npx serve .`
 
-No npm install. No build step. No backend.
+No npm. No build step. No backend.
+
+---
 
 ## Deploy to GitHub Pages
 
-No workflow file needed. GitHub Pages can serve static files directly:
-
 1. Push the repo to GitHub
 2. Go to **Settings → Pages**
-3. Under **Source**, select **Deploy from a branch**
-4. Set branch to `main`, folder to `/ (root)`
-5. Click **Save**
+3. Source: **Deploy from a branch** → `main` → `/ (root)`
+4. Click **Save**
 
-Your site will be live at `https://<username>.github.io/meeting-cost-calculator` within a minute.
+Live at `https://<username>.github.io/meeting-cost-calculator` within a minute.
 
 ---
 
 ## Why I Built This
 
-I was in a 90-minute "alignment meeting" with 7 people when it struck me: nobody in this room knows what this meeting costs. The calendar invite just says "1:30–3:00 PM." I wanted a tool that shows the number in real time — not as a gimmick, but as a small behavioural nudge. Every existing tool I found was US-centric, required a signup, or hadn't been touched in years. Built this in two days with Claude Code.
+I was in a 90-minute "alignment meeting" with 7 people when it struck me: nobody in this room knows what this meeting costs. The calendar invite just says "1:30–3:00 PM." I wanted a tool that shows the number in real time — not as a gimmick, but as a small behavioural nudge. Every existing tool I found was US-centric, required a signup, or hadn't been touched in years.
 
 ---
 
@@ -139,7 +136,3 @@ PRs welcome, especially for:
 - Google Calendar integration (auto-populate attendees + duration)
 - Slack bot version (`/meetingcost 45 @alice @bob @carol`)
 - Multiple meeting comparison view
-
----
-
-*Built with [Claude Code](https://claude.ai/code) · Zero dependencies · Works offline*
