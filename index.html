@@ -10,11 +10,11 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Meeting Cost Calculator 💸">
   <meta property="og:description" content="See the real cost of your meetings — in real time.">
-  <meta property="og:image" content="assets/preview.png">
+  <meta property="og:image" content="https://devpanchal37.github.io/meeting-cost-calculator/assets/preview.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Meeting Cost Calculator 💸">
   <meta name="twitter:description" content="See the real cost of your meetings — in real time.">
-  <meta name="twitter:image" content="assets/preview.png">
+  <meta name="twitter:image" content="https://devpanchal37.github.io/meeting-cost-calculator/assets/preview.png">
 
   <!-- Emoji favicon — no external assets needed -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💸</text></svg>">
@@ -431,24 +431,39 @@
     }
 
     function getFunComparisons(totalCost, currency) {
+      const c = (price, label) => ({ count: Math.floor(totalCost / price), label });
+
       if (currency === 'INR') {
         return [
-          { count: Math.floor(totalCost / 300), label: 'Swiggy orders (avg ₹300)' },
-          { count: Math.floor(totalCost / 250), label: 'movie tickets (₹250)' },
-          { count: Math.floor(totalCost / 20),  label: 'cups of chai (₹20)' },
+          c(20,   'cups of cutting chai ☕ (₹20)'),
+          c(300,  'Swiggy / Zomato orders 🛵 (₹300)'),
+          c(350,  'plates of biryani 🍛 (₹350)'),
+          c(300,  'PVR / INOX movie tickets 🎬 (₹300)'),
+          c(119,  'months of Spotify Premium 🎵 (₹119/mo)'),
+          c(149,  'months of Netflix Mobile 📺 (₹149/mo)'),
+          c(28,   'days of GitHub Copilot 🤖 (₹830/mo)'),
         ];
       }
       if (currency === 'USD') {
         return [
-          { count: Math.floor(totalCost / 5),  label: 'coffees ($5)' },
-          { count: Math.floor(totalCost / 15), label: 'Uber rides ($15)' },
-          { count: Math.floor(totalCost / 4),  label: 'GitHub Pro months ($4)' },
+          c(7,    'Starbucks lattes ☕ ($7)'),
+          c(12,   'Chipotle burritos 🌯 ($12)'),
+          c(15,   'movie tickets 🎬 ($15)'),
+          c(12,   'months of Spotify Premium 🎵 ($12/mo)'),
+          c(10,   'months of GitHub Copilot 🤖 ($10/mo)'),
+          c(20,   'months of ChatGPT Plus 🧠 ($20/mo)'),
+          c(8,    'months of an AWS t3.micro server ☁️ ($8/mo)'),
         ];
       }
+      // EUR
       return [
-        { count: Math.floor(totalCost / 4),  label: 'coffees (€4)' },
-        { count: Math.floor(totalCost / 12), label: 'Spotify months (€12)' },
-        { count: Math.floor(totalCost / 10), label: 'beers at a bar (€10)' },
+        c(2,    'espressos ☕ (€2)'),
+        c(6,    'döner kebabs 🥙 (€6)'),
+        c(12,   'movie tickets 🎬 (€12)'),
+        c(11,   'months of Spotify Premium 🎵 (€11/mo)'),
+        c(13,   'months of Netflix Standard 📺 (€13/mo)'),
+        c(5,    'beers at a bar 🍺 (€5)'),
+        c(10,   'months of GitHub Copilot 🤖 (€10/mo)'),
       ];
     }
 

@@ -14,9 +14,11 @@ The cost is invisible. There's no feedback loop. And the default for every recur
 
 ## Demo
 
-**[Live Demo →](https://devnp.github.io/meeting-cost-calculator)**
+**[Live Demo →](https://devpanchal37.github.io/meeting-cost-calculator/)**
 
 ![Meeting ticker mid-meeting](assets/preview.png)
+
+> **Screenshot missing?** The `assets/preview.png` file needs to be added manually — take a screenshot of the live ticker, save it as `assets/preview.png`, and push it to the repo.
 
 ---
 
@@ -97,7 +99,7 @@ meeting_cost    = 0.2938 × 2700 × 4 = ₹3,173
 ## Run Locally
 
 ```bash
-git clone https://github.com/devnp/meeting-cost-calculator.git
+git clone https://github.com/Devpanchal37/meeting-cost-calculator.git
 cd meeting-cost-calculator
 ```
 
@@ -137,12 +139,6 @@ PRs welcome, especially for:
 - Google Calendar integration (auto-populate attendees + duration)
 - Slack bot version (`/meetingcost 45 @alice @bob @carol`)
 - Multiple meeting comparison view
-
----
-
-## License
-
-MIT — use it, fork it, embed it in your internal tools.
 
 ---
 
